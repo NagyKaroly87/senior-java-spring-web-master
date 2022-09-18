@@ -2,6 +2,7 @@ package hu.ponte.hr.services;
 
 import hu.ponte.hr.config.ConfigNameConst;
 import hu.ponte.hr.controller.ImageMeta;
+import hu.ponte.hr.controller.exception.exception.PonteSignatureException;
 import hu.ponte.hr.entity.Doc;
 import hu.ponte.hr.repository.DocRepository;
 import hu.ponte.hr.util.FileUtils;
@@ -38,15 +39,20 @@ public class ImageStore {
     @Transactional
     public Doc store(MultipartFile multipartFile) throws IOException, SignatureException {
 
-    Doc docWithId = mapToDoc(multipartFile);
+        Doc docWithId = mapToDoc(multipartFile);
 
-    File file = new File(docWithId.getFilePath());
-    try (FileOutputStream fos = new FileOutputStream(file)) {
+        File directory = new File(docWithId.getFolderPath());
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+
+        File file = new File(docWithId.getFilePath());
+        try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(multipartFile.getBytes());
-    } catch(Exception e) {
-        log.error("FileOutputStream: save path: {}", file.getPath());
-         // ide valami
-    }
+        } catch (Exception e) {
+            log.error("FileOutputStream: save path: {}", file.getPath());
+            throw new PonteSignatureException("FileOutputStream: save path: {}", e);
+        }
         log.info("FileOutputStream: save path: {}", file.getPath());
         return docWithId;
     }
@@ -69,7 +75,7 @@ public class ImageStore {
         List<ImageMeta> ret = new ArrayList<>();
         List<Doc> docs = docRepository.findAll();
 
-        for(Doc d :docs){
+        for (Doc d : docs) {
             ret.add(ImageMeta.builder().id(String.valueOf(d.getId())).name(d.getName()).digitalSign(d.getSign()).mimeType(d.getMimeType()).build());
         }
 
@@ -80,15 +86,15 @@ public class ImageStore {
     public String getDocPathById(String docId) throws FileNotFoundException {
         String filePath;
         Optional<Doc> doc = docRepository.findById(Long.valueOf(docId));
-        if(doc.isPresent()){
+        if (doc.isPresent()) {
             filePath = doc.get().getFilePath();
-        }else{
+        } else {
             log.error("EntityNotFoundException: getDocPathById inputs:  docId {}", docId);
             throw new EntityNotFoundException("Doc:" + docId.toString());
         }
-        if(Files.notExists(Path.of(filePath))){
+        if (Files.notExists(Path.of(filePath))) {
             log.error("FileNotFoundException: getDocPathById:  filePath {}", filePath);
-            throw new  FileNotFoundException(filePath);
+            throw new FileNotFoundException(filePath);
         }
         return filePath;
     }
