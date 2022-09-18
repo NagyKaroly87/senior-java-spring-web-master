@@ -25,10 +25,8 @@ public class UploadController
     @RequestMapping(value = "post", method = RequestMethod.POST)
     @ResponseBody
     public String handleFormUpload(@RequestParam("file") MultipartFile file) throws IOException, SignatureException {
-
         log.info("handleFormUpload start");
-       imageStore.store(file);
-
+        imageStore.store(file);
         return "ok";
     }
 }
