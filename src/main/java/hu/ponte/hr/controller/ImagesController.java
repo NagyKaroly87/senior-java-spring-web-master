@@ -32,6 +32,7 @@ public class ImagesController {
         log.info("getImage start");
         String path = imageStore.getDocPathById(id);
         log.info("getImage return path:  {}",path);
+        //TODO
         response.sendRedirect("http://localhost:8080/" + path);
     }
 }
